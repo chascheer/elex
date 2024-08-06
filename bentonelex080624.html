@@ -1,0 +1,159 @@
+
+<!DOCTYPE>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+
+<style>
+
+        @font-face{font-family:"McClatchy Sans";font-style:normal;font-weight:400;src:url(http://www.thenewstribune.com/static/fonts/mcclatchy-sans/McClatchySans-Regular.woff) format('woff')}
+        @font-face{font-family:"McClatchy Slab";font-style:normal;font-weight:600;src:url(http://www.thenewstribune.com/static/fonts/mcclatchy-slab/McClatchySlab-Semibold.woff) format('woff')}
+        body{font:1em normal Roboto, Arial,sans-serif;margin:0;padding:0;}
+/* CLEARFIX */
+        .clearfix:after{content:".";display:block;height:0;clear:both;visibility:hidden;}
+        .clearfix {display:inline-block;}
+        /* Hides from IE-mac \*/
+        * html .clearfix{height:1%;}
+        .clearfix{display:block;}
+        /* End hide from IE-mac */
+        .elexresults{border:1px solid #444;border-radius:2px;list-style:none;margin:2em auto;padding:0;width:auto;}
+        .elexresults > li{background:#FFF;border-top:1px solid #FFF;border-bottom:1px solid #BCBCBC;font-size:14px;margin:0;padding:1em 0;}
+        li.elexresults_heading{border:0;padding:0;}
+        li.elexresults_anchors{background:#FFF;}
+        .elexresults_heading h3{background:#444;color:#EFEFEF;font:bold 20px/100% "McClatchy Slab","Trebuchet MS",Tahoma,Arial,sans-serif;margin:0;padding:0.33em 1em;}
+        .elexresults h2{color:#666;font:bold 16px/140% "McClatchy Slab","Trebuchet MS",Tahoma,Arial,sans-serif;margin:0 0 1em;text-align:center;text-transform:uppercase;padding:0 1em;}
+        .elexresults table{box-shadow:0 8px 25px -17px #CCC;font-family:"McClatchy Sans",sans-serif;margin:0 auto 0.5em;padding:0;width:90%;}
+        .elexresults th{background:#444;color:#FFF;padding:3px 7px;text-align:left;}
+        .elexresults td{border-bottom:1px solid #EEE;padding:3px 7px 7px;vertical-align:middle;}
+        .elexresults tr:last-child td{border:0;}
+        .elexresults tr:hover td{background:#FFFFE5;}
+        .elexresults_anchors ul{padding:1em 2% 0 !important;}
+        .elexresults_anchors li{font-size:12px;list-style:disc inside !important;margin-bottom:0.5em;overflow:auto;}
+        .elexresults_anchors li:last-child, .elexresults:first-of-type li{margin-bottom:0;}
+        .wrapper{position:relative;}
+        .pie{height:250px;margin:0 auto;width:250px;}
+        .table-container{overflow:hidden;}
+        .elexresults .num{text-align:right;}
+        @media only screen and (max-width: 400px) {
+          th.party, td.party{display:none;}
+        }
+</style>
+
+
+<script src="https://chascheer.github.io/elex/papaparse.min.js" type="text/javascript"></script>
+
+<div id="elexresults">
+
+<ul class="elexresults">
+              <li class="elexresults_heading">
+                <h3 id="elexresults_2024electionresults">2024 PRIMARY ELECTION RESULTS</h3>
+              </li>
+    </ul>
+
+
+
+
+
+
+
+
+
+<script>
+
+function loadCResults()
+{
+
+  const bentonURL  = 'https://sheets.googleapis.com/v4/spreadsheets/1UBF3f_hibrrND7OexXMb-o8nxAtICV-0iUBFYussirs/values/BENTON?key=AIzaSyBfFvf8B6gnF0_8E-XsUTB_HsTp42TjtfE';
+  const sheetName = 'BENTON';
+  const wrapper   = document.getElementById( 'elexresults' );
+var lograces = [];
+	var logresults = [];
+	var racelines = [];
+
+
+  var parsedresults = [];
+
+function doStuff(data) {
+
+var h;
+for (h = 0; h < data.length; h++) {
+lograces.push(data[h]['Race']);
+logresults.push("<tr><td>" + data[h]['Candidate'] + "<\/td><td class='num'>" + data[h]['Votes'] + "<\/td><td class='num'>" + data[h]['PercentageOfTotalVotes']  + "<\/tr>");
+}
+let uniqueraces = [...new Set(lograces)];
+
+wrapper.innerHTML += "<ul class='elexresults'><li class='elexresults_heading'><h3 id='elexresults_countyvotes'>BENTON COUNTY VOTES<\/h3><\/li>"
+
+var i;
+for (i = 0; i < uniqueraces.length; i++) {
+ var currentrace = uniqueraces[i];
+var racex = lograces.indexOf(currentrace);
+	raceindices = [];
+	while (racex != -1) {
+		raceindices.push(racex);
+		racex = lograces.indexOf(currentrace, racex +1);
+}		
+	var thisrace = "";
+	for (j = 0; j < raceindices.length; j++) {
+  	thisrace += logresults[raceindices[j]];
+	}
+	racelines.push(thisrace);
+const htmlcounty = `
+
+<ul class="elexresults">
+<li>
+        <h2>${uniqueraces[i]}</h2>
+<div class="wrapper clearfix">
+          <div class="table-container">
+            <table>
+              <tr><th>Name</th>
+                                <th class="num">Votes</th>
+                <th class="num">%</th>
+              </tr>
+ 	${racelines[i]}
+</table></div></div></li>
+                              
+`;
+
+wrapper.innerHTML += htmlcounty
+
+ }
+
+console.log(logresults[5]);
+
+}
+
+function parseData(url, callBack){
+    return fetch(url).then(response =>
+        response.json().then(result => {
+            let data = Papa.parse(Papa.unparse(result.values), { header: true, 
+complete: function(results) {
+            callBack(results.data);
+        }
+}
+
+);
+        })
+    );
+}
+
+parseData(bentonURL, doStuff);
+
+}
+  loadCResults();
+</script>
+
+</ul>
+
+</div>
+<script src="https://chascheer.github.io/elex/resizer-server.js#timer=5"></script>
+
+
+
+</body>
+</html>
+
+
+
