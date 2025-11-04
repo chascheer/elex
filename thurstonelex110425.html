@@ -150,7 +150,16 @@ parseData(whatcomURL, doStuff);
 </div>
 <script src="https://chascheer.github.io/elex/resizer-server.js#timer=5"></script>
 
+function sendHeight() {
+  const height = document.body.scrollHeight;
+  // Send the height to the parent window
+  window.parent.postMessage({
+    height: height
+  }, "*"); // '*' means any origin can receive the message; specify the parent's origin for better security
+}
 
+// Call on load and whenever content changes
+window.onload = sendHeight;
 
 </body>
 </html>
