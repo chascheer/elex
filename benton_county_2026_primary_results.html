@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Washington State 2026 Primary — Results Export</title>
+<style>
+  :root{
+    --ink:#1b2430;
+    --ink-soft:#4b5563;
+    --line:#dde2e8;
+    --bg:#f7f8fa;
+    --panel:#ffffff;
+    --accent:#1f4e8c;
+    --accent-soft:#eaf1fb;
+    --stripe:#f2f4f7;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  header{
+    background:var(--accent);
+    color:#fff;
+    padding:22px 28px 20px;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.35rem;
+    font-weight:700;
+    letter-spacing:0.01em;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    color:#cfe0f5;
+  }
+  .status-note{
+    display:inline-block;
+    margin-top:10px;
+    font-size:0.78rem;
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.3);
+    padding:4px 10px;
+    border-radius:4px;
+  }
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    padding:16px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  .controls input[type="search"], .controls select{
+    font-size:0.88rem;
+    padding:7px 10px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .controls input[type="search"]{
+    flex:1 1 240px;
+    min-width:200px;
+  }
+  .controls label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .count-badge{
+    margin-left:auto;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .table-wrap{
+    padding:0 28px 40px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--panel);
+    font-size:0.85rem;
+    box-shadow:0 1px 3px rgba(20,30,50,0.06);
+  }
+  thead th{
+    position:sticky;
+    top:63px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    text-align:left;
+    padding:9px 12px;
+    font-weight:700;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    border-bottom:2px solid var(--accent);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  thead th .arrow{
+    opacity:0.4;
+    font-size:0.7rem;
+    margin-left:4px;
+  }
+  thead th.sorted .arrow{
+    opacity:1;
+  }
+  tbody td{
+    padding:7px 12px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:nth-child(even){
+    background:var(--stripe);
+  }
+  tbody tr:hover{
+    background:var(--accent-soft);
+  }
+  td.num{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+  }
+  td.juris{
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  td.party{
+    color:var(--ink-soft);
+    font-size:0.8rem;
+    white-space:nowrap;
+  }
+  .empty-msg{
+    text-align:center;
+    padding:40px;
+    color:var(--ink-soft);
+    font-size:0.9rem;
+  }
+  footer{
+    padding:14px 28px 30px;
+    color:var(--ink-soft);
+    font-size:0.75rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="electionTitle">Washington State Election Results</h1>
+  <p id="electionSub"></p>
+  <span class="status-note" id="statusNote"></span>
+</header>
+
+<div class="controls">
+  <input type="search" id="searchBox" placeholder="Search race, candidate, county…">
+  
+  <label>Contest type
+    <select id="typeFilter"><option value="">All types</option></select>
+  </label>
+  <span class="count-badge" id="countBadge"></span>
+</div>
+
+<div class="table-wrap">
+  <table id="resultsTable">
+    <thead>
+      <tr>
+        <th data-key="race">Race / Measure<span class="arrow">↕</span></th>
+        <th data-key="contestType">Type<span class="arrow">↕</span></th>
+        <th data-key="candidate">Candidate / Option<span class="arrow">↕</span></th>
+        <th data-key="party">Party<span class="arrow">↕</span></th>
+        <th data-key="votes">Votes<span class="arrow">↕</span></th>
+        <th data-key="precinctsReporting">Precincts Reporting<span class="arrow">↕</span></th>
+        <th data-key="precinctsParticipating">Precincts Total<span class="arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty-msg" id="emptyMsg" style="display:none;">No rows match your filters.</div>
+</div>
+
+<footer id="footerNote"></footer>
+
+<script>
+const ROWS = [{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Jacek \"Jack\" Kobiesa","party":"(States No Party Preference)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Amanda McKinney","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"John Duresky","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"John C. Hughs","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Favian Valencia","party":"(Prefers Independent Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Jerrod Sessler","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Devin Poore","party":"(Prefers Cascade Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Ken Vaz","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Zac Rossi","party":"(States No Party Preference)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Elpidia Saavedra","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Matt Boehnke","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"U.S. Representative - Congressional District 4","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"State Senator - Legislative District 8","contestType":"Candidate","candidate":"Gabe Galbraith","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Senator - Legislative District 8","contestType":"Candidate","candidate":"Nikki Torres","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Senator - Legislative District 8","contestType":"Candidate","candidate":"Write-In","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 8","contestType":"Candidate","candidate":"Stephanie Barnard","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 8","contestType":"Candidate","candidate":"Write-In","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 8","contestType":"Candidate","candidate":"April Connors","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 8","contestType":"Candidate","candidate":"Write-In","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":156},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 14","contestType":"Candidate","candidate":"Chelsea Dimas","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 14","contestType":"Candidate","candidate":"William Chichenoff","party":"(States No Party Preference)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 14","contestType":"Candidate","candidate":"Gloria Mendoza","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 14","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 14","contestType":"Candidate","candidate":"Deb Manjarrez","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 14","contestType":"Candidate","candidate":"Tony G Sandoval","party":"(Prefers Democrat Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 14","contestType":"Candidate","candidate":"Ezequiel Morfin","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 14","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":13},{"jurisdiction":"Benton County","race":"State Senator - Legislative District 15","contestType":"Candidate","candidate":"Jeremie Dufault","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Senator - Legislative District 15","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 15","contestType":"Candidate","candidate":"Chris Corry","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 15","contestType":"Candidate","candidate":"Jack McEntire","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 15","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 15","contestType":"Candidate","candidate":"Reedy Berg","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 15","contestType":"Candidate","candidate":"Chase Foster","party":"Republican","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 15","contestType":"Candidate","candidate":"Liz Hallock","party":"(Prefers No Kings Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 15","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":14},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 16","contestType":"Candidate","candidate":"Mark Klicker","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 16","contestType":"Candidate","candidate":"Kyle Palmer","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"State Representative Pos. 1 - Legislative District 16","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 16","contestType":"Candidate","candidate":"Skyler Rude","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 16","contestType":"Candidate","candidate":"Derek Sarley","party":"(Prefers Democratic Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"State Representative Pos. 2 - Legislative District 16","contestType":"Candidate","candidate":"Write-In","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Assessor","contestType":"Candidate","candidate":"Bill Spencer","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Assessor","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Auditor","contestType":"Candidate","candidate":"Brenda Chilton","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Auditor","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Clerk","contestType":"Candidate","candidate":"Josie Delvin","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Clerk","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Commissioner District 2","contestType":"Candidate","candidate":"Michael Alvarez","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":94},{"jurisdiction":"Benton County","race":"Commissioner District 2","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":94},{"jurisdiction":"Benton County","race":"Coroner","contestType":"Candidate","candidate":"William \"Bill\" Leach","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Coroner","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Julie Long","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Eric Eisinger","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Sheriff","contestType":"Candidate","candidate":"Brad Klippert","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Sheriff","contestType":"Candidate","candidate":"Michael (Mike) Clark","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Sheriff","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Treasurer","contestType":"Candidate","candidate":"Kenneth Spencer Jr.","party":"(Prefers Republican Party)","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Treasurer","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #01 - Supreme Court","contestType":"Candidate","candidate":"Colleen Melody","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #01 - Supreme Court","contestType":"Candidate","candidate":"Laura Christensen Colberg","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #01 - Supreme Court","contestType":"Candidate","candidate":"Scott Edwards","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #01 - Supreme Court","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #03 - Supreme Court","contestType":"Candidate","candidate":"Jaime Michelle Hawk","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #03 - Supreme Court","contestType":"Candidate","candidate":"David Stevens","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #03 - Supreme Court","contestType":"Candidate","candidate":"Mike Diaz","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #03 - Supreme Court","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #05 - Supreme Court","contestType":"Candidate","candidate":"Greg Miller","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #05 - Supreme Court","contestType":"Candidate","candidate":"Theo Angelis","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #05 - Supreme Court","contestType":"Candidate","candidate":"Dave Larson","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #05 - Supreme Court","contestType":"Candidate","candidate":"Sharonda Amamilo","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #05 - Supreme Court","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #07 - Supreme Court","contestType":"Candidate","candidate":"David R Shelvey","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #07 - Supreme Court","contestType":"Candidate","candidate":"Debra L. Stephens","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #07 - Supreme Court","contestType":"Candidate","candidate":"Karim A. Merchant","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #07 - Supreme Court","contestType":"Candidate","candidate":"Todd A. Bloom","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Justice Position #07 - Supreme Court","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":250},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"Kyle Saltz","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"Mary S. Lipton","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"Ragan Faylor","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"David Tveraas","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"Todd Samuel","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Council Pos. 4","contestType":"Candidate","candidate":"Write-in","party":"Nonpartisan","votes":0,"precinctsReporting":0,"precinctsParticipating":67},{"jurisdiction":"Benton County","race":"Proposition No. 1 - Fire District #4","contestType":"BallotMeasure","candidate":"Approved","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":29},{"jurisdiction":"Benton County","race":"Proposition No. 1 - Fire District #4","contestType":"BallotMeasure","candidate":"Rejected","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":29},{"jurisdiction":"Benton County","race":"Proposition No. 1 - Fire District #6","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":6},{"jurisdiction":"Benton County","race":"Proposition No. 1 - Fire District #6","contestType":"BallotMeasure","candidate":"No","party":"","votes":0,"precinctsReporting":0,"precinctsParticipating":6}];
+window.RESULTS_META = {"electionName": "2026 Primary \u2014 Benton County", "electionDate": "2026-08-04", "createdAt": "2026-07-24T12:54:58.8242684Z", "statusNote": "Export generated before Election Day \u2014 most vote counts show as 0 / Not Reported.", "jurisdictionCount": 1};
+</script>
+<script>
+const META = window.RESULTS_META || {};
+
+let sortKey = 'jurisdiction';
+let sortDir = 1;
+
+const tbody = document.getElementById('tbody');
+const searchBox = document.getElementById('searchBox');
+const typeFilter = document.getElementById('typeFilter');
+const countBadge = document.getElementById('countBadge');
+const emptyMsg = document.getElementById('emptyMsg');
+
+function populateFilters(){
+  const jSet = [...new Set(ROWS.map(r=>r.jurisdiction))].sort();
+  const tSet = [...new Set(ROWS.map(r=>r.contestType))].sort();
+  for(const t of tSet){
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    typeFilter.appendChild(o);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function render(){
+  const q = searchBox.value.trim().toLowerCase();
+  const tf = typeFilter.value;
+
+  let filtered = ROWS.filter(r=>{
+    if(tf && r.contestType !== tf) return false;
+    if(q){
+      const hay = (r.jurisdiction+' '+r.race+' '+r.candidate+' '+r.party).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a,b)=>{
+    let av = a[sortKey], bv = b[sortKey];
+    if(typeof av === 'number' && typeof bv === 'number') return (av-bv)*sortDir;
+    av = (av===undefined||av===null) ? '' : String(av).toLowerCase();
+    bv = (bv===undefined||bv===null) ? '' : String(bv).toLowerCase();
+    if(av < bv) return -1*sortDir;
+    if(av > bv) return 1*sortDir;
+    return 0;
+  });
+
+  countBadge.textContent = filtered.length.toLocaleString() + ' of ' + ROWS.length.toLocaleString() + ' rows';
+  emptyMsg.style.display = filtered.length ? 'none' : 'block';
+
+  const frag = document.createDocumentFragment();
+  for(const r of filtered){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>'+escapeHtml(r.race)+'</td>'+
+      '<td>'+escapeHtml(r.contestType)+'</td>'+
+      '<td>'+escapeHtml(r.candidate)+'</td>'+
+      '<td class="party">'+escapeHtml(r.party)+'</td>'+
+      '<td class="num">'+Number(r.votes).toLocaleString()+'</td>'+
+      '<td class="num">'+escapeHtml(r.precinctsReporting)+'</td>'+
+      '<td class="num">'+escapeHtml(r.precinctsParticipating)+'</td>';
+    frag.appendChild(tr);
+  }
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey === key){
+      sortDir *= -1;
+    } else {
+      sortKey = key;
+      sortDir = 1;
+    }
+    document.querySelectorAll('thead th').forEach(h=>h.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.arrow').textContent = sortDir === 1 ? '↑' : '↓';
+    render();
+  });
+});
+
+searchBox.addEventListener('input', render);
+typeFilter.addEventListener('change', render);
+
+populateFilters();
+render();
+
+document.getElementById('electionTitle').textContent = META.electionName || 'Washington State Election Results';
+document.getElementById('electionSub').textContent = 'Election date: ' + (META.electionDate || '—') + ' · Export generated: ' + (META.createdAt || '—');
+document.getElementById('statusNote').textContent = META.statusNote || '';
+document.getElementById('footerNote').textContent = 'Source: results.votewa.gov export. Table includes statewide races and all county-level races (' + ROWS.length.toLocaleString() + ' candidate/option rows across ' + (META.jurisdictionCount||'') + ' jurisdictions).';
+</script>
+
+</body>
+</html>
