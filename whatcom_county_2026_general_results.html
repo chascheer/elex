@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Washington State 2026 Primary — Results Export</title>
+<style>
+  :root{
+    --ink:#1b2430;
+    --ink-soft:#4b5563;
+    --line:#dde2e8;
+    --bg:#f7f8fa;
+    --panel:#ffffff;
+    --accent:#1f4e8c;
+    --accent-soft:#eaf1fb;
+    --stripe:#f2f4f7;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  header{
+    background:var(--accent);
+    color:#fff;
+    padding:22px 28px 20px;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.35rem;
+    font-weight:700;
+    letter-spacing:0.01em;
+  }
+  header p{
+    margin:0;
+    font-size:0.85rem;
+    color:#cfe0f5;
+  }
+  .status-note{
+    display:inline-block;
+    margin-top:10px;
+    font-size:0.78rem;
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.3);
+    padding:4px 10px;
+    border-radius:4px;
+  }
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    padding:16px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  .controls input[type="search"], .controls select{
+    font-size:0.88rem;
+    padding:7px 10px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .controls input[type="search"]{
+    flex:1 1 240px;
+    min-width:200px;
+  }
+  .controls label{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .count-badge{
+    margin-left:auto;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .table-wrap{
+    padding:0 28px 40px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--panel);
+    font-size:0.85rem;
+    box-shadow:0 1px 3px rgba(20,30,50,0.06);
+  }
+  thead th{
+    position:sticky;
+    top:63px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    text-align:left;
+    padding:9px 12px;
+    font-weight:700;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    border-bottom:2px solid var(--accent);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  thead th .arrow{
+    opacity:0.4;
+    font-size:0.7rem;
+    margin-left:4px;
+  }
+  thead th.sorted .arrow{
+    opacity:1;
+  }
+  tbody td{
+    padding:7px 12px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  tbody tr:nth-child(even){
+    background:var(--stripe);
+  }
+  tbody tr:hover{
+    background:var(--accent-soft);
+  }
+  td.num{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    font-weight:600;
+  }
+  td.juris{
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  td.party{
+    color:var(--ink-soft);
+    font-size:0.8rem;
+    white-space:nowrap;
+  }
+  .empty-msg{
+    text-align:center;
+    padding:40px;
+    color:var(--ink-soft);
+    font-size:0.9rem;
+  }
+  footer{
+    padding:14px 28px 30px;
+    color:var(--ink-soft);
+    font-size:0.75rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="electionTitle">Washington State Election Results</h1>
+  <p id="electionSub"></p>
+  <span class="status-note" id="statusNote"></span>
+</header>
+
+<div class="controls">
+  <input type="search" id="searchBox" placeholder="Search race, candidate, county…">
+  
+  <label>Contest type
+    <select id="typeFilter"><option value="">All types</option></select>
+  </label>
+  <span class="count-badge" id="countBadge"></span>
+</div>
+
+<div class="table-wrap">
+  <table id="resultsTable">
+    <thead>
+      <tr>
+        <th data-key="race">Race / Measure<span class="arrow">↕</span></th>
+        <th data-key="contestType">Type<span class="arrow">↕</span></th>
+        <th data-key="candidate">Candidate / Option<span class="arrow">↕</span></th>
+        <th data-key="party">Party<span class="arrow">↕</span></th>
+        <th data-key="votes">Votes<span class="arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty-msg" id="emptyMsg" style="display:none;">No rows match your filters.</div>
+</div>
+
+<footer id="footerNote"></footer>
+
+<script>
+const ROWS = [{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IP26-645","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IP26-645","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IL26-001","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IL26-001","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IL26-638","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Initiative Measure No. IL26-638","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Congressional District 2 - U.S. Representative","contestType":"Candidate","candidate":"Rick Larsen","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Congressional District 2 - U.S. Representative","contestType":"Candidate","candidate":"Edwin H. Feller","party":"(Prefers Republican Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Congressional District 2 - U.S. Representative","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 1","contestType":"Candidate","candidate":"Debra Lekanoff","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 1","contestType":"Candidate","candidate":"Cindy Carter","party":"(Prefers Republican Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 1","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 2","contestType":"Candidate","candidate":"Alex Ramel","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 2","contestType":"Candidate","candidate":"Joseph Segault","party":"(States No Party Preference)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 40 - State Representative Pos. 2","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Senator","contestType":"Candidate","candidate":"Erika Creydt","party":"(Prefers Republican Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Senator","contestType":"Candidate","candidate":"Michael Alvarez Shepard","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Senator","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 1","contestType":"Candidate","candidate":"Alicia Rule","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 1","contestType":"Candidate","candidate":"Misty Flowers","party":"(Prefers Republican Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 1","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 2","contestType":"Candidate","candidate":"Joe Timmons","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 2","contestType":"Candidate","candidate":"Justin Pike","party":"(Prefers Republican Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Legislative District 42 - State Representative Pos. 2","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Ryan Swinburnson","party":"(States No Party Preference)","votes":0},{"jurisdiction":"Whatcom County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Jesse Corkern","party":"(Prefers Democratic Party)","votes":0},{"jurisdiction":"Whatcom County","race":"Prosecuting Attorney","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #01","contestType":"Candidate","candidate":"Colleen Melody","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #01","contestType":"Candidate","candidate":"Scott Edwards","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #01","contestType":"Candidate","candidate":"Write-In","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #03","contestType":"Candidate","candidate":"David Stevens","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #03","contestType":"Candidate","candidate":"Jaime Michelle Hawk","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #03","contestType":"Candidate","candidate":"Write-In","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #04","contestType":"Candidate","candidate":"Ian Birk","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #04","contestType":"Candidate","candidate":"Sean O'Donnell","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #04","contestType":"Candidate","candidate":"Write-In","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #05","contestType":"Candidate","candidate":"Theo Angelis","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #05","contestType":"Candidate","candidate":"Dave Larson","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #05","contestType":"Candidate","candidate":"Write-In","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #07","contestType":"Candidate","candidate":"Debra L. Stephens","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #07","contestType":"Candidate","candidate":"Todd A. Bloom","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Supreme Court - Justice Position #07","contestType":"Candidate","candidate":"Write-In","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Whatcom County District Court Judge Position 1","contestType":"Candidate","candidate":"Angela Anderson","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Whatcom County District Court Judge Position 1","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Whatcom County District Court Judge Position 2","contestType":"Candidate","candidate":"Jonathan Rands","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Whatcom County District Court Judge Position 2","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 4","contestType":"Candidate","candidate":"Paul Burrill","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 4","contestType":"Candidate","candidate":"Tor Benson","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 4","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 5","contestType":"Candidate","candidate":"Chris Elder","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 5","contestType":"Candidate","candidate":"Shawn Ensley","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Port of Bellingham Commissioner District 5","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Public Utility District No. 1 Commissioner District 1","contestType":"Candidate","candidate":"Eddy Ury","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Public Utility District No. 1 Commissioner District 1","contestType":"Candidate","candidate":"Frank Imhof","party":"Nonpartisan","votes":0},{"jurisdiction":"Whatcom County","race":"Public Utility District No. 1 Commissioner District 1","contestType":"Candidate","candidate":"Write-in","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Proposition 2026-06 Authorizing the City's Salary Commission to Set the Mayor's Salary","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Proposition 2026-06 Authorizing the City's Salary Commission to Set the Mayor's Salary","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Proposition 2026-07 Streamlining the City's Contract Review Process to Allow Electronic Signatures","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Proposition 2026-07 Streamlining the City's Contract Review Process to Allow Electronic Signatures","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Initiative 26-01 Prohibition of Algorithmic Price-Fixing in the Rental Market","contestType":"BallotMeasure","candidate":"Yes","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Bellingham Initiative 26-01 Prohibition of Algorithmic Price-Fixing in the Rental Market","contestType":"BallotMeasure","candidate":"No","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Lynden Proposition 2026-05 Levy Lid Lift for Public Safety and Essential Community Services","contestType":"BallotMeasure","candidate":"Approved","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"City of Lynden Proposition 2026-05 Levy Lid Lift for Public Safety and Essential Community Services","contestType":"BallotMeasure","candidate":"Rejected","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Fire Protection District 1 Proposition 2026-08 Regular Property Tax Levy Lid Lift","contestType":"BallotMeasure","candidate":"Approved","party":"","votes":0},{"jurisdiction":"Whatcom County","race":"Fire Protection District 1 Proposition 2026-08 Regular Property Tax Levy Lid Lift","contestType":"BallotMeasure","candidate":"Rejected","party":"","votes":0}];
+window.RESULTS_META = {"electionName": "2026 General \u2014 Whatcom County", "electionDate": "2026-11-03", "createdAt": "2026-10-22T15:55:37.2039998Z", "statusNote": "", "jurisdictionCount": 1};
+</script>
+<script>
+const META = window.RESULTS_META || {};
+
+let sortKey = 'jurisdiction';
+let sortDir = 1;
+
+const tbody = document.getElementById('tbody');
+const searchBox = document.getElementById('searchBox');
+const typeFilter = document.getElementById('typeFilter');
+const countBadge = document.getElementById('countBadge');
+const emptyMsg = document.getElementById('emptyMsg');
+
+function populateFilters(){
+  const jSet = [...new Set(ROWS.map(r=>r.jurisdiction))].sort();
+  const tSet = [...new Set(ROWS.map(r=>r.contestType))].sort();
+  for(const t of tSet){
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    typeFilter.appendChild(o);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function render(){
+  const q = searchBox.value.trim().toLowerCase();
+  const tf = typeFilter.value;
+
+  let filtered = ROWS.filter(r=>{
+    if(tf && r.contestType !== tf) return false;
+    if(q){
+      const hay = (r.jurisdiction+' '+r.race+' '+r.candidate+' '+r.party).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a,b)=>{
+    let av = a[sortKey], bv = b[sortKey];
+    if(typeof av === 'number' && typeof bv === 'number') return (av-bv)*sortDir;
+    av = (av===undefined||av===null) ? '' : String(av).toLowerCase();
+    bv = (bv===undefined||bv===null) ? '' : String(bv).toLowerCase();
+    if(av < bv) return -1*sortDir;
+    if(av > bv) return 1*sortDir;
+    return 0;
+  });
+
+  countBadge.textContent = filtered.length.toLocaleString() + ' of ' + ROWS.length.toLocaleString() + ' rows';
+  emptyMsg.style.display = filtered.length ? 'none' : 'block';
+
+  const frag = document.createDocumentFragment();
+  for(const r of filtered){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>'+escapeHtml(r.race)+'</td>'+
+      '<td>'+escapeHtml(r.contestType)+'</td>'+
+      '<td>'+escapeHtml(r.candidate)+'</td>'+
+      '<td class="party">'+escapeHtml(r.party)+'</td>'+
+      '<td class="num">'+Number(r.votes).toLocaleString()+'</td>';
+    frag.appendChild(tr);
+  }
+  tbody.innerHTML = '';
+  tbody.appendChild(frag);
+}
+
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey === key){
+      sortDir *= -1;
+    } else {
+      sortKey = key;
+      sortDir = 1;
+    }
+    document.querySelectorAll('thead th').forEach(h=>h.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.arrow').textContent = sortDir === 1 ? '↑' : '↓';
+    render();
+  });
+});
+
+searchBox.addEventListener('input', render);
+typeFilter.addEventListener('change', render);
+
+populateFilters();
+render();
+
+document.getElementById('electionTitle').textContent = META.electionName || 'Washington State Election Results';
+document.getElementById('electionSub').textContent = 'Election date: ' + (META.electionDate || '—') + ' · Export generated: ' + (META.createdAt || '—');
+document.getElementById('statusNote').textContent = META.statusNote || '';
+document.getElementById('footerNote').textContent = 'Source: results.votewa.gov export. Table includes all Whatcom County races and measures (' + ROWS.length.toLocaleString() + ' candidate/option rows across 25 races).';
+</script>
+
+</body>
+</html>
